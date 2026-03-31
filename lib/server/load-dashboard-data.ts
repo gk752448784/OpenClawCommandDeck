@@ -6,6 +6,10 @@ import { loadCronJobs } from "@/lib/adapters/cron-jobs";
 import { loadHeartbeatGuide } from "@/lib/adapters/heartbeat";
 import { loadAgentDefinitions } from "@/lib/adapters/agents";
 import { loadSessionsSnapshot } from "@/lib/adapters/sessions";
+import { collectChannelSignals, type ChannelSignal } from "@/lib/signals/channels";
+import { collectGatewaySignal, type GatewaySignal } from "@/lib/signals/gateway";
+import { collectLogSignals, type LogSignals } from "@/lib/signals/logs";
+import { collectModelSignals, type ModelSignals } from "@/lib/signals/models";
 import { buildOverviewModel } from "@/lib/selectors/overview";
 import { buildAlertsModel } from "@/lib/selectors/alerts";
 import { buildChannelsSummary } from "@/lib/selectors/channels";
@@ -13,6 +17,7 @@ import { summarizeCron } from "@/lib/selectors/cron";
 import { summarizeAgents } from "@/lib/selectors/agents";
 import { buildSessionsModel } from "@/lib/selectors/sessions";
 import { buildDiagnosticsModel } from "@/lib/selectors/diagnostics";
+import { buildIssues } from "@/lib/issues/build-issues";
 import {
   parseOpenClawJsonOutput,
   runOpenClawCli,
@@ -21,6 +26,35 @@ import {
 } from "@/lib/server/openclaw-cli";
 
 const DIAGNOSTICS_TTL_MS = 15_000;
+
+export type DiagnosticsStatusSignal = {
+  runtimeVersion: string;
+  gateway?: {
+    reachable?: boolean;
+    error?: string | null;
+  };
+  securityAudit?: {
+    summary?: {
+      critical?: number;
+      warn?: number;
+      info?: number;
+    };
+    findings?: Array<{
+      checkId: string;
+      severity: "critical" | "warn" | "info";
+      title: string;
+      detail: string;
+      remediation?: string;
+    }>;
+  };
+};
+
+export type IssueSignals = {
+  channels: ChannelSignal[];
+  models: ModelSignals;
+  gateway: GatewaySignal;
+  logs: LogSignals;
+};
 
 let diagnosticsCache:
   | {
@@ -93,40 +127,58 @@ export async function loadDashboardData() {
   };
 }
 
+export async function loadIssueSignals(): Promise<IssueSignals> {
+  const core = await loadCoreDashboardData();
+  const sessions = await requireOk(
+    loadSessionsSnapshot(
+      OPENCLAW_ROOT,
+      core.agents.map((agent) => agent.id)
+    )
+  );
+  const diagnostics = await loadDiagnosticsSignals();
+
+  return {
+    channels: collectChannelSignals(core.config),
+    models: collectModelSignals({
+      config: core.config,
+      sessions
+    }),
+    gateway: collectGatewaySignal(diagnostics.status),
+    logs: collectLogSignals({
+      logs: diagnostics.logs,
+      sessions
+    })
+  };
+}
+
+export async function loadDiagnosticsSignals(): Promise<{
+  status: DiagnosticsStatusSignal;
+  logs: string[];
+}> {
+  const [statusOutput, logsOutput] = await Promise.all([
+    runOpenClawCli(["status", "--json"]),
+    tryRunOpenClawCli(["logs", "--plain", "--limit", "30"])
+  ]);
+  const status = parseOpenClawJsonOutput<DiagnosticsStatusSignal>(statusOutput.stdout);
+  const logs = summarizeLogLines(`${logsOutput.stdout}\n${logsOutput.stderr}`);
+
+  return {
+    status,
+    logs
+  };
+}
+
 export async function loadDiagnosticsData() {
   if (diagnosticsCache && diagnosticsCache.expiresAt > Date.now()) {
     return diagnosticsCache.data;
   }
 
-  const [statusOutput, logsOutput] = await Promise.all([
-    runOpenClawCli(["status", "--json"]),
-    tryRunOpenClawCli(["logs", "--plain", "--limit", "30"])
-  ]);
-  const status = parseOpenClawJsonOutput<{
-    runtimeVersion: string;
-    gateway?: {
-      reachable?: boolean;
-      error?: string | null;
-    };
-    securityAudit?: {
-      summary?: {
-        critical?: number;
-        warn?: number;
-        info?: number;
-      };
-      findings?: Array<{
-        checkId: string;
-        severity: "critical" | "warn" | "info";
-        title: string;
-        detail: string;
-        remediation?: string;
-      }>;
-    };
-  }>(statusOutput.stdout);
-  const logs = summarizeLogLines(`${logsOutput.stdout}\n${logsOutput.stderr}`);
+  const { status, logs } = await loadDiagnosticsSignals();
+  const issueSignals = await loadIssueSignals();
   const diagnostics = buildDiagnosticsModel({
     status,
-    logs
+    logs,
+    issues: buildIssues({ signals: issueSignals })
   });
 
   diagnosticsCache = {

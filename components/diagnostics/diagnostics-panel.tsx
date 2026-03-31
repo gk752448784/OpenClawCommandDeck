@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { VerificationBadge } from "@/components/issues/verification-badge";
 import { SectionCard } from "@/components/shared/section-card";
 import type { DiagnosticsModel } from "@/lib/types/view-models";
 
@@ -147,6 +148,24 @@ export function DiagnosticsPanel() {
               <h3>{finding.title}</h3>
               <p>{finding.detail}</p>
               {finding.remediation ? <footer>{finding.remediation}</footer> : null}
+            </article>
+          ))}
+        </div>
+      </SectionCard>
+
+      <SectionCard title="修复证据" subtitle="诊断与问题闭环共享的线索">
+        <div className="workbench-list">
+          {data.issueEvidence.map((issue) => (
+            <article key={issue.id} className="priority-card priority-high">
+              <div className="priority-meta">
+                <span>{issue.source}</span>
+                <span>{issue.repairability}</span>
+              </div>
+              <h3>{issue.title}</h3>
+              <p>{issue.summary}</p>
+              <footer>
+                <VerificationBadge status={issue.verificationStatus} />
+              </footer>
             </article>
           ))}
         </div>

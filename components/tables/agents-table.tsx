@@ -1,6 +1,12 @@
 import type { AgentDefinition } from "@/lib/adapters/agents";
 
-export function AgentsTable({ agents }: { agents: AgentDefinition[] }) {
+export function AgentsTable({
+  agents,
+  issueCountsByAgent = {}
+}: {
+  agents: AgentDefinition[];
+  issueCountsByAgent?: Record<string, number>;
+}) {
   return (
     <table className="data-table">
       <thead>
@@ -8,6 +14,7 @@ export function AgentsTable({ agents }: { agents: AgentDefinition[] }) {
           <th>代理</th>
           <th>角色</th>
           <th>工作区</th>
+          <th>问题线索</th>
         </tr>
       </thead>
       <tbody>
@@ -24,6 +31,7 @@ export function AgentsTable({ agents }: { agents: AgentDefinition[] }) {
                     : "自定义"}
             </td>
             <td>{agent.workspace}</td>
+            <td>{issueCountsByAgent[agent.id] ?? 0} 条</td>
           </tr>
         ))}
       </tbody>

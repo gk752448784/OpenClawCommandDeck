@@ -1,12 +1,17 @@
 import { AppShell } from "@/components/layout/app-shell";
+import { SessionLogPanel } from "@/components/sessions/session-log-panel";
 import { SectionCard } from "@/components/shared/section-card";
-import { loadCoreDashboardData } from "@/lib/server/load-dashboard-data";
+import { buildIssues } from "@/lib/issues/build-issues";
+import { buildSessionRepairSignalsModel } from "@/lib/selectors/session-repair-signals";
+import { loadCoreDashboardData, loadIssueSignals } from "@/lib/server/load-dashboard-data";
 import { loadSessionsSnapshot } from "@/lib/adapters/sessions";
 import { OPENCLAW_ROOT } from "@/lib/config";
 import { buildSessionsModel } from "@/lib/selectors/sessions";
 
 export default async function SessionsPage() {
   const data = await loadCoreDashboardData();
+  const issueSignals = await loadIssueSignals();
+  const issues = buildIssues({ signals: issueSignals });
   const sessionsResult = await loadSessionsSnapshot(
     OPENCLAW_ROOT,
     data.agents.map((agent) => agent.id)
@@ -14,6 +19,15 @@ export default async function SessionsPage() {
   const sessions = sessionsResult.ok ? buildSessionsModel(sessionsResult.data) : {
     total: 0,
     activeSummary: "0/0 活跃",
+    items: []
+  };
+  const sessionRepairSignals = sessionsResult.ok ? buildSessionRepairSignalsModel({
+    sessions: sessionsResult.data,
+    issues,
+    logs: issueSignals.logs
+  }) : {
+    sessionIssueCounts: {},
+    agentIssueCounts: {},
     items: []
   };
 
@@ -32,6 +46,7 @@ export default async function SessionsPage() {
               <th>模型</th>
               <th>最近更新时间</th>
               <th>上下文占用</th>
+              <th>异常线索</th>
               <th>状态</th>
             </tr>
           </thead>
@@ -44,11 +59,19 @@ export default async function SessionsPage() {
                 <td>{item.model}</td>
                 <td>{item.ageLabel}</td>
                 <td>{item.percentUsed}</td>
+                <td>{sessionRepairSignals.agentIssueCounts[item.agentId] ?? 0} 条</td>
                 <td>{item.status === "active" ? "活跃" : "待机"}</td>
               </tr>
             ))}
           </tbody>
         </table>
+      </SectionCard>
+
+      <SectionCard
+        title="日志与修复线索"
+        subtitle="把会话/代理错误摘录、根因和修复级别放在同一处看"
+      >
+        <SessionLogPanel items={sessionRepairSignals.items} />
       </SectionCard>
     </AppShell>
   );

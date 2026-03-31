@@ -13,7 +13,13 @@ function agentLabel(id: string, title: string) {
   return title;
 }
 
-export function AgentsOverview({ agents }: { agents: AgentDefinition[] }) {
+export function AgentsOverview({
+  agents,
+  issueCountsByAgent = {}
+}: {
+  agents: AgentDefinition[];
+  issueCountsByAgent?: Record<string, number>;
+}) {
   const model = buildAgentsDashboardModel(agents);
   const dispatchAgents = model.items.map((item) => ({
     id: item.id,
@@ -55,6 +61,7 @@ export function AgentsOverview({ agents }: { agents: AgentDefinition[] }) {
             <div className="management-tags">
               <span className="management-tag">工作区：{item.workspaceName}</span>
               <span className="management-tag">{item.id}</span>
+              <span className="management-tag">问题线索：{issueCountsByAgent[item.id] ?? 0}</span>
             </div>
 
             <AgentDispatchForm

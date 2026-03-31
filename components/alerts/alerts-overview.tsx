@@ -1,14 +1,9 @@
-import type { AlertModel } from "@/lib/types/view-models";
+import { IssueCard } from "@/components/issues/issue-card";
+import { buildIssuesDashboardModel } from "@/lib/selectors/issues-dashboard";
+import type { Issue } from "@/lib/types/issues";
 
-import { FixCronTargetForm } from "@/components/control/fix-cron-target-form";
-import { buildAlertsDashboardModel } from "@/lib/selectors/alerts-dashboard";
-
-function severityLabel(severity: AlertModel["severity"]) {
-  return severity === "high" ? "高优先级" : "中优先级";
-}
-
-export function AlertsOverview({ alerts }: { alerts: AlertModel[] }) {
-  const model = buildAlertsDashboardModel(alerts);
+export function AlertsOverview({ issues }: { issues: Issue[] }) {
+  const model = buildIssuesDashboardModel(issues);
 
   return (
     <div className="alerts-overview">
@@ -22,35 +17,14 @@ export function AlertsOverview({ alerts }: { alerts: AlertModel[] }) {
         </header>
 
         <div className="alerts-overview-list">
-          {model.items.map((alert) => (
-            <article key={alert.id} className={`alerts-overview-item alert-item alert-item-${alert.severity}`}>
-              <div className="alert-item-top">
-                <div>
-                  <div className="alert-item-meta">
-                    <span>{alert.category}</span>
-                    <span>{severityLabel(alert.severity)}</span>
-                  </div>
-                  <h3>{alert.title}</h3>
-                </div>
-                <span
-                  className={`status-badge ${
-                    alert.severity === "high" ? "status-critical" : "status-warning"
-                  }`}
-                >
-                  <span className="status-dot" />
-                  {alert.primaryAction}
-                </span>
-              </div>
-
-              <p className="alert-item-summary">{alert.summary}</p>
-              <p className="alert-item-summary">{alert.recommendedAction}</p>
-
-              {alert.needsRepair ? (
-                <div className="alerts-overview-form-embed">
-                  <FixCronTargetForm cronId={alert.targetId} />
-                </div>
-              ) : null}
-            </article>
+          {model.items.map((issue) => (
+            <IssueCard
+              key={issue.id}
+              issue={issue}
+              primaryAction={issue.primaryAction}
+              repairabilityLabel={issue.repairabilityLabel}
+              verificationLabel={issue.verificationLabel}
+            />
           ))}
         </div>
       </section>
@@ -75,6 +49,10 @@ export function AlertsOverview({ alerts }: { alerts: AlertModel[] }) {
           <div className="metric-card metric-card-quiet">
             <span className="metric-label">中优先级</span>
             <strong className="metric-value">{model.summary.medium}</strong>
+          </div>
+          <div className="metric-card metric-card-quiet">
+            <span className="metric-label">可自动修复</span>
+            <strong className="metric-value">{model.summary.autoRepairable}</strong>
           </div>
         </div>
       </section>

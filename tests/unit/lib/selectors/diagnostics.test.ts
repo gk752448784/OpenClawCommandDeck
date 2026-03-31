@@ -28,6 +28,31 @@ describe("diagnostics selector", () => {
           ]
         }
       },
+      issues: [
+        {
+          id: "config:gateway_unreachable:gateway",
+          source: "Config",
+          title: "Gateway 当前不可达",
+          summary: "模型侧诊断无法连接 gateway。",
+          severity: "high",
+          rootCause: {
+            type: "gateway_unreachable",
+            evidence: {
+              summary: "connect ECONNREFUSED",
+              detail: "status command failed",
+              impactScope: "gateway"
+            }
+          },
+          repairPlan: {
+            repairability: "confirm",
+            summary: "确认后重启 gateway。",
+            steps: ["执行 gateway restart"],
+            actions: [{ kind: "restart_gateway", label: "重启 gateway" }],
+            fallbackManualSteps: ["手动执行 gateway restart"]
+          },
+          verificationStatus: "unresolved"
+        }
+      ],
       logs: [
         "2026-03-26T03:13:03.415Z info gateway/ws missing scope",
         "2026-03-26T03:13:03.419Z info gateway/ws config.get failed"
@@ -38,6 +63,7 @@ describe("diagnostics selector", () => {
     expect(model.gateway.status).toBe("warning");
     expect(model.security.critical).toBe(3);
     expect(model.findings[0]?.remediation).toContain("allowlist");
+    expect(model.issueEvidence[0]?.title).toBe("Gateway 当前不可达");
     expect(model.logs).toHaveLength(2);
   });
 });

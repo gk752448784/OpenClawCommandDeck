@@ -1,9 +1,12 @@
 import { AppShell } from "@/components/layout/app-shell";
 import { AlertsOverview } from "@/components/alerts/alerts-overview";
-import { loadCoreDashboardData } from "@/lib/server/load-dashboard-data";
+import { buildIssues } from "@/lib/issues/build-issues";
+import { loadCoreDashboardData, loadIssueSignals } from "@/lib/server/load-dashboard-data";
 
 export default async function AlertsPage() {
   const data = await loadCoreDashboardData();
+  const signals = await loadIssueSignals();
+  const issues = buildIssues({ signals });
 
   return (
     <AppShell
@@ -12,7 +15,7 @@ export default async function AlertsPage() {
       pageTitle="告警分诊"
       pageSubtitle="只看需要动作的异常"
     >
-      <AlertsOverview alerts={data.alerts} />
+      <AlertsOverview issues={issues} />
     </AppShell>
   );
 }

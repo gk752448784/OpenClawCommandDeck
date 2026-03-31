@@ -1,4 +1,19 @@
+import type { IssueSource } from "@/lib/types/issues";
+
 export type HealthState = "healthy" | "warning" | "critical";
+
+export type PriorityCardType = "计划任务失败" | "计划任务提醒";
+
+export type PriorityCardSource =
+  | "main"
+  | "cron"
+  | "channel"
+  | "channels"
+  | "agent"
+  | "agents"
+  | "config"
+  | "chief-of-staff"
+  | "second-brain";
 
 export type TopBarModel = {
   appName: string;
@@ -25,8 +40,8 @@ export type TopBarModel = {
 export type PriorityCard = {
   id: string;
   title: string;
-  type: string;
-  source: string;
+  type: PriorityCardType;
+  source: PriorityCardSource;
   summary: string;
   recommendedAction: string;
   severity: "medium" | "high";
@@ -114,6 +129,14 @@ export type DiagnosticsModel = {
     info: number;
   };
   logs: string[];
+  issueEvidence: Array<{
+    id: string;
+    source: string;
+    title: string;
+    summary: string;
+    verificationStatus: "resolved" | "partially_resolved" | "unresolved";
+    repairability: "auto" | "confirm" | "manual";
+  }>;
   findings: Array<{
     id: string;
     severity: "critical" | "warn" | "info";
@@ -128,7 +151,7 @@ export type AlertModel = {
   sourceId: string;
   targetId: string;
   severity: "medium" | "high";
-  category: "Cron" | "Channel" | "Agent" | "Config";
+  category: IssueSource;
   title: string;
   summary: string;
   recommendedAction: string;

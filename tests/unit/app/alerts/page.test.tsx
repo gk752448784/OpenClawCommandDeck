@@ -3,6 +3,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 let mockedDashboardData: any;
+let mockedIssueSignals: any;
+let mockedIssues: any;
 
 vi.stubGlobal("React", React);
 
@@ -35,7 +37,12 @@ vi.mock("next/link", () => ({
 }));
 
 vi.mock("@/lib/server/load-dashboard-data", () => ({
-  loadCoreDashboardData: vi.fn(async () => mockedDashboardData)
+  loadCoreDashboardData: vi.fn(async () => mockedDashboardData),
+  loadIssueSignals: vi.fn(async () => mockedIssueSignals)
+}));
+
+vi.mock("@/lib/issues/build-issues", () => ({
+  buildIssues: vi.fn(() => mockedIssues)
 }));
 
 function buildDashboardData() {
@@ -108,6 +115,32 @@ function buildDashboardData() {
 describe("AlertsPage", () => {
   it("uses the compact mission-control framing", async () => {
     mockedDashboardData = buildDashboardData();
+    mockedIssueSignals = { channels: [], models: {}, gateway: {}, logs: {} };
+    mockedIssues = [
+      {
+        id: "channel:channel_plugin_mismatch:discord",
+        source: "Channel",
+        title: "Discord 渠道启用但插件关闭",
+        summary: "渠道状态和插件状态不一致，消息不会真正投递。",
+        severity: "high",
+        rootCause: {
+          type: "channel_plugin_mismatch",
+          evidence: {
+            summary: "discord channel enabled, plugin disabled",
+            detail: "plugins.entries.discord.enabled=false",
+            impactScope: "discord"
+          }
+        },
+        repairPlan: {
+          repairability: "confirm",
+          summary: "先确认再启用 discord 插件。",
+          steps: ["检查 discord 插件开关", "启用插件并重试"],
+          actions: [{ kind: "enable_plugin", label: "启用插件" }],
+          fallbackManualSteps: ["手动检查 openclaw 配置"]
+        },
+        verificationStatus: "unresolved"
+      }
+    ];
     const { default: AlertsPage } = await import("@/app/alerts/page");
     const markup = renderToStaticMarkup(await AlertsPage());
 
@@ -116,5 +149,6 @@ describe("AlertsPage", () => {
     expect(markup).toContain("告警分诊");
     expect(markup).toContain("只看需要动作的异常");
     expect(markup.indexOf("待处理异常")).toBeLessThan(markup.indexOf("Triage first"));
+    expect(markup).toContain("Discord 渠道启用但插件关闭");
   });
 });

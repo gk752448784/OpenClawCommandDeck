@@ -520,7 +520,7 @@ a {
 .alerts-overview-metrics {
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .alerts-overview-list {
@@ -568,6 +568,50 @@ a {
 .alert-item-summary {
   margin: 0;
   color: var(--muted);
+}
+
+.issue-summary-grid,
+.issue-plan-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.issue-summary-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.issue-plan-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.issue-section-label {
+  margin: 0 0 6px;
+  color: var(--accent);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.issue-plan-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+}
+
+.issue-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  align-items: center;
+}
+
+.issue-card-statuses {
+  display: grid;
+  gap: 8px;
+  justify-items: end;
 }
 
 .alert-item-high {
@@ -1898,7 +1942,9 @@ a {
   }
 
   .alerts-overview-hero,
-  .alerts-overview-metrics {
+  .alerts-overview-metrics,
+  .issue-summary-grid,
+  .issue-plan-grid {
     grid-template-columns: 1fr;
   }
 }

@@ -1,4 +1,5 @@
 import type { DiagnosticsModel } from "@/lib/types/view-models";
+import type { Issue } from "@/lib/types/issues";
 
 type RawFinding = {
   checkId: string;
@@ -26,10 +27,12 @@ type RawDiagnosticsStatus = {
 
 export function buildDiagnosticsModel({
   status,
-  logs
+  logs,
+  issues = []
 }: {
   status: RawDiagnosticsStatus;
   logs: string[];
+  issues?: Issue[];
 }): DiagnosticsModel {
   const gatewayReachable = status.gateway?.reachable ?? false;
   const gatewayError = status.gateway?.error ?? "";
@@ -47,6 +50,14 @@ export function buildDiagnosticsModel({
       info: status.securityAudit?.summary?.info ?? 0
     },
     logs: logs.slice(0, 12),
+    issueEvidence: issues.slice(0, 4).map((issue) => ({
+      id: issue.id,
+      source: issue.source,
+      title: issue.title,
+      summary: issue.summary,
+      verificationStatus: issue.verificationStatus,
+      repairability: issue.repairPlan.repairability
+    })),
     findings: (status.securityAudit?.findings ?? []).slice(0, 6).map((finding) => ({
       id: finding.checkId,
       severity: finding.severity,
