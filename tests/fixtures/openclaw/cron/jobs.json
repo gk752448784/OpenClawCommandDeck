@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "jobs": [
+    {
+      "id": "62b3510c-029c-423b-a9d1-9bc9a608627f",
+      "agentId": "main",
+      "name": "monthly-memory-cleaner-reminder",
+      "description": "记忆清洁提醒",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 9 1 * *",
+        "tz": "Asia/Shanghai"
+      },
+      "delivery": {
+        "mode": "channel",
+        "channel": "feishu"
+      },
+      "state": {
+        "nextRunAtMs": 1775000000000,
+        "lastRunAtMs": 1772400000000,
+        "lastRunStatus": "error",
+        "lastStatus": "error",
+        "lastDurationMs": 1200,
+        "lastError": "delivery requires target",
+        "consecutiveErrors": 2
+      }
+    },
+    {
+      "id": "daily-self-reflection-job",
+      "agentId": "chief-of-staff",
+      "name": "daily-self-reflection",
+      "description": "每日复盘",
+      "enabled": true,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 22 * * *",
+        "tz": "Asia/Shanghai"
+      },
+      "delivery": {
+        "mode": "session"
+      },
+      "state": {
+        "nextRunAtMs": 1772486400000,
+        "lastRunAtMs": 1772400000000,
+        "lastRunStatus": "success",
+        "lastStatus": "success",
+        "lastDurationMs": 950,
+        "consecutiveErrors": 0
+      }
+    }
+  ]
+}

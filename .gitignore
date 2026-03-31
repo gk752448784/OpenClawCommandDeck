@@ -1,0 +1,10 @@
+.next/
+node_modules/
+test-results/
+.superpowers/brainstorm/
+
+tsconfig.tsbuildinfo
+.tmp_openclaw_models_status.json
+
+.DS_Store
+*.log
