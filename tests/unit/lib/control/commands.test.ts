@@ -7,6 +7,8 @@ import {
   buildToggleChannelCommand,
   buildTogglePluginCommand,
   buildSwitchModelCommand,
+  buildGatewayStartCommand,
+  buildGatewayStopCommand,
   buildGatewayRestartCommand,
   buildDispatchAgentCommand
 } from "@/lib/control/commands";
@@ -67,6 +69,17 @@ describe("control command builders", () => {
     expect(buildGatewayRestartCommand()).toEqual({
       command: "openclaw",
       args: ["gateway", "restart"]
+    });
+  });
+
+  it("builds gateway start/stop commands", () => {
+    expect(buildGatewayStartCommand()).toEqual({
+      command: "openclaw",
+      args: ["gateway", "start"]
+    });
+    expect(buildGatewayStopCommand()).toEqual({
+      command: "openclaw",
+      args: ["gateway", "stop"]
     });
   });
 

@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   buildDispatchAgentCommand,
   buildFixCronTargetCommand,
+  buildGatewayRestartCommand,
+  buildGatewayStartCommand,
+  buildGatewayStopCommand,
   buildRunCronCommand,
   buildSwitchModelCommand,
   buildToggleChannelCommand,
@@ -102,6 +105,15 @@ export async function POST(
           requireString(body, "message")
         )
       );
+      break;
+    case "gateway-start":
+      result = await executeCliCommand(buildGatewayStartCommand());
+      break;
+    case "gateway-stop":
+      result = await executeCliCommand(buildGatewayStopCommand());
+      break;
+    case "gateway-restart":
+      result = await executeCliCommand(buildGatewayRestartCommand());
       break;
     default:
       return NextResponse.json(

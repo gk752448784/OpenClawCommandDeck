@@ -16,12 +16,13 @@
 - 读取当前机器上的 OpenClaw 数据目录
 - 通过当前机器上的 `openclaw` CLI 执行控制命令
 
-## What It Does
+## 功能概览
 
 当前已经包含这些页面和能力：
 
 - `工作台`：集中展示当前状态、重点事项和快捷入口
 - `控制台`：切换模型、执行动作、派发代理任务
+- `服务`：查看 Gateway 运行态，执行启停/重启，管理配置备份与恢复
 - `消息与会话`：查看会话摘要、异常线索和最近日志摘录
 - `渠道`：查看飞书、微信、Discord 等渠道配置与状态
 - `计划任务`：查看任务节奏、失败状态和修复入口
@@ -62,6 +63,14 @@
 - 切换主模型到可用候选
 - 重启 Gateway
 
+服务管理页还提供独立运维动作：
+
+- 启动 Gateway
+- 停止 Gateway
+- 重启 Gateway
+- 创建配置备份
+- 从备份恢复并重启 Gateway
+
 日志类问题当前先做到：
 
 - 自动识别错误线索
@@ -95,6 +104,11 @@
 - `openclaw config set ...`
 - `openclaw gateway restart`
 
+服务管理相关动作还会执行：
+
+- `openclaw gateway start`
+- `openclaw gateway stop`
+
 ## Requirements
 
 - `Node.js >= 22`
@@ -110,6 +124,10 @@
 
 - `OPENCLAW_ROOT`：OpenClaw 根目录，默认是 `~/.openclaw`
 - `NEXT_PUBLIC_APP_NAME`：前端展示的应用名称
+- `OPENCLAW_CLI_TIMEOUT_MS`：诊断类 CLI 调用超时时间（毫秒，默认 12000）
+- `OPENCLAW_CONTROL_TIMEOUT_MS`：控制类 CLI 调用超时时间（毫秒，默认 15000）
+- `OPENCLAW_SKIP_GATEWAY_RESTART_ON_MODEL_CHANGE`：设为 `1/true` 时，模型变更后跳过 Gateway 重启
+- `OPENCLAW_ALLOW_PRIVATE_MODEL_DISCOVERY`：设为 `1/true` 时，允许模型自动发现访问内网/本地地址
 
 示例：
 
@@ -153,14 +171,28 @@ npm run dev:test
 - `POST /api/issues/[issueId]/repair`
 - `POST /api/issues/[issueId]/verify`
 - `GET /api/models`
+- `POST /api/models`
+- `POST /api/models/discover`
 - `POST /api/control/[action]`
 - `GET /api/diagnostics`
+- `GET /api/service`
+- `GET /api/service/backups`
+- `POST /api/service/backups`
+- `POST /api/service/backups/restore`
+- `GET /api/agents`
+- `GET /api/channels`
+- `GET /api/cron`
+- `GET /api/sessions`
+- `GET /api/settings`
 
 其中：
 
 - `/api/issues` 返回统一问题列表
 - `/api/issues/[issueId]/repair` 执行问题对应修复动作
 - `/api/issues/[issueId]/verify` 重新跑验证逻辑，判断问题是否已解决
+- `/api/service` 返回服务运行态快照（版本、Gateway 可达性、检查时间）
+- `/api/service/backups` 支持列出与创建配置备份
+- `/api/service/backups/restore` 从指定备份恢复并重启 Gateway
 
 ## Scripts
 

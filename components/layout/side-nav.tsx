@@ -24,6 +24,7 @@ const groups = [
     title: "Operate",
     description: "运行",
     links: [
+      { href: "/service", label: "服务" },
       { href: "/channels", label: "渠道" },
       { href: "/cron", label: "任务" },
       { href: "/agents", label: "代理" }

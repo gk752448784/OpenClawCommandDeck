@@ -17,7 +17,8 @@ export default async function AgentsPage() {
   );
   const issueSignals = await loadIssueSignals({
     core: data,
-    sessions: sessionsResult.ok ? sessionsResult.data : undefined
+    sessions: sessionsResult.ok ? sessionsResult.data : undefined,
+    includeDiagnostics: false
   });
   const issues = buildIssues({ signals: issueSignals });
   const sessionRepairSignals = sessionsResult.ok ? buildSessionRepairSignalsModel({

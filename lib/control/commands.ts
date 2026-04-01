@@ -84,6 +84,20 @@ export function buildGatewayRestartCommand(): CliCommand {
   };
 }
 
+export function buildGatewayStartCommand(): CliCommand {
+  return {
+    command: "openclaw",
+    args: ["gateway", "start"]
+  };
+}
+
+export function buildGatewayStopCommand(): CliCommand {
+  return {
+    command: "openclaw",
+    args: ["gateway", "stop"]
+  };
+}
+
 export function buildDispatchAgentCommand(
   agentId: string,
   message: string
