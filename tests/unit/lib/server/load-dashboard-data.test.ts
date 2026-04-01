@@ -121,4 +121,43 @@ describe("loadIssueSignals", () => {
     });
     expect(signals.logs.excerpts).toEqual([]);
   });
+
+  it("reuses one diagnostics snapshot when building diagnostics data", async () => {
+    tryRunOpenClawCli
+      .mockResolvedValueOnce({
+        ok: true,
+        stdout: '{"runtimeVersion":"2026.4.1","gateway":{"reachable":true}}',
+        stderr: ""
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        stdout: "2026-04-01T10:10:10.000Z info gateway online",
+        stderr: ""
+      });
+
+    const { loadDiagnosticsData } = await import("@/lib/server/load-dashboard-data");
+    await loadDiagnosticsData();
+
+    expect(tryRunOpenClawCli).toHaveBeenCalledTimes(2);
+  });
+
+  it("caches diagnostics signals across close loadIssueSignals calls", async () => {
+    tryRunOpenClawCli
+      .mockResolvedValueOnce({
+        ok: true,
+        stdout: '{"runtimeVersion":"2026.4.1","gateway":{"reachable":true}}',
+        stderr: ""
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        stdout: "2026-04-01T10:10:10.000Z info gateway online",
+        stderr: ""
+      });
+
+    const { loadIssueSignals } = await import("@/lib/server/load-dashboard-data");
+    await loadIssueSignals();
+    await loadIssueSignals();
+
+    expect(tryRunOpenClawCli).toHaveBeenCalledTimes(2);
+  });
 });

@@ -11,12 +11,15 @@ export const dynamic = "force-dynamic";
 
 export default async function AgentsPage() {
   const data = await loadCoreDashboardData();
-  const issueSignals = await loadIssueSignals();
-  const issues = buildIssues({ signals: issueSignals });
   const sessionsResult = await loadSessionsSnapshot(
     OPENCLAW_ROOT,
     data.agents.map((agent) => agent.id)
   );
+  const issueSignals = await loadIssueSignals({
+    core: data,
+    sessions: sessionsResult.ok ? sessionsResult.data : undefined
+  });
+  const issues = buildIssues({ signals: issueSignals });
   const sessionRepairSignals = sessionsResult.ok ? buildSessionRepairSignalsModel({
     sessions: sessionsResult.data,
     issues,

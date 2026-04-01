@@ -2,6 +2,9 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
+const DEFAULT_OPENCLAW_TIMEOUT_MS = Number(process.env.OPENCLAW_CLI_TIMEOUT_MS ?? "12000");
+
+export type OpenClawCliFailureCode = "cli_timeout" | "cli_spawn_error" | "cli_unknown_error";
 
 export function extractJsonPayload(raw: string) {
   const firstObject = raw.indexOf("{");
@@ -74,7 +77,8 @@ export function summarizeLogLines(raw: string) {
 export async function runOpenClawCli(args: string[]) {
   const { stdout, stderr } = await execFileAsync("openclaw", args, {
     env: process.env,
-    maxBuffer: 1024 * 1024 * 4
+    maxBuffer: 1024 * 1024 * 4,
+    timeout: DEFAULT_OPENCLAW_TIMEOUT_MS
   });
 
   return {
@@ -91,8 +95,23 @@ export async function tryRunOpenClawCli(args: string[]) {
       ...result
     };
   } catch (error) {
+    const timeoutError =
+      typeof error === "object" &&
+      error !== null &&
+      "killed" in error &&
+      Boolean(error.killed) &&
+      "signal" in error &&
+      error.signal === "SIGTERM";
+
+    const errorCode: OpenClawCliFailureCode = timeoutError
+      ? "cli_timeout"
+      : typeof error === "object" && error !== null && "code" in error
+        ? "cli_spawn_error"
+        : "cli_unknown_error";
+
     return {
       ok: false as const,
+      errorCode,
       stdout:
         typeof error === "object" && error !== null && "stdout" in error
           ? String(error.stdout)

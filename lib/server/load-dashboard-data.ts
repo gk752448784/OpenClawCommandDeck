@@ -20,7 +20,6 @@ import { buildDiagnosticsModel } from "@/lib/selectors/diagnostics";
 import { buildIssues } from "@/lib/issues/build-issues";
 import {
   parseOpenClawJsonOutput,
-  runOpenClawCli,
   summarizeLogLines,
   tryRunOpenClawCli
 } from "@/lib/server/openclaw-cli";
@@ -62,6 +61,15 @@ let diagnosticsCache:
   | {
       expiresAt: number;
       data: ReturnType<typeof buildDiagnosticsModel>;
+    }
+  | undefined;
+let diagnosticsSignalsCache:
+  | {
+      expiresAt: number;
+      data: {
+        status: DiagnosticsStatusSignal;
+        logs: string[];
+      };
     }
   | undefined;
 
@@ -147,11 +155,16 @@ function emptyDiagnosticsSignals(): {
 export async function loadIssueSignals({
   core,
   sessions,
-  includeDiagnostics = true
+  includeDiagnostics = true,
+  diagnosticsSignals
 }: {
   core?: CoreDashboardData;
   sessions?: SessionsSnapshot;
   includeDiagnostics?: boolean;
+  diagnosticsSignals?: {
+    status: DiagnosticsStatusSignal;
+    logs: string[];
+  };
 } = {}): Promise<IssueSignals> {
   const resolvedCore = core ?? await loadCoreDashboardData();
   const resolvedSessions = sessions ?? await requireOk(
@@ -160,7 +173,9 @@ export async function loadIssueSignals({
       resolvedCore.agents.map((agent) => agent.id)
     )
   );
-  const diagnostics = includeDiagnostics ? await loadDiagnosticsSignals() : emptyDiagnosticsSignals();
+  const diagnostics = includeDiagnostics
+    ? diagnosticsSignals ?? await loadDiagnosticsSignalsCached()
+    : emptyDiagnosticsSignals();
 
   return {
     channels: collectChannelSignals(resolvedCore.config),
@@ -213,13 +228,31 @@ export async function loadDiagnosticsSignals(): Promise<{
   };
 }
 
+async function loadDiagnosticsSignalsCached() {
+  if (diagnosticsSignalsCache && diagnosticsSignalsCache.expiresAt > Date.now()) {
+    return diagnosticsSignalsCache.data;
+  }
+
+  const data = await loadDiagnosticsSignals();
+  diagnosticsSignalsCache = {
+    data,
+    expiresAt: Date.now() + DIAGNOSTICS_TTL_MS
+  };
+  return data;
+}
+
 export async function loadDiagnosticsData() {
   if (diagnosticsCache && diagnosticsCache.expiresAt > Date.now()) {
     return diagnosticsCache.data;
   }
 
-  const { status, logs } = await loadDiagnosticsSignals();
-  const issueSignals = await loadIssueSignals();
+  const { status, logs } = await loadDiagnosticsSignalsCached();
+  const issueSignals = await loadIssueSignals({
+    diagnosticsSignals: {
+      status,
+      logs
+    }
+  });
   const diagnostics = buildDiagnosticsModel({
     status,
     logs,

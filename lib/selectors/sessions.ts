@@ -46,7 +46,7 @@ function inferChannel(key: string) {
 
 function toSessionItem(session: RawSession): SessionItemModel {
   return {
-    id: session.sessionId,
+    id: `${session.sessionId}:${session.agentId}:${session.key}`,
     agentId: session.agentId,
     channel: inferChannel(session.key),
     kind: session.kind ?? "direct",

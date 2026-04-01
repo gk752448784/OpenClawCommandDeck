@@ -111,6 +111,6 @@ export async function POST(
   }
 
   return NextResponse.json(result, {
-    status: result.ok ? 200 : 500
+    status: result.ok ? 200 : result.errorCode === "cli_timeout" ? 504 : 500
   });
 }

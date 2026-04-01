@@ -1,4 +1,5 @@
 import path from "node:path";
+import { isIP } from "node:net";
 
 import { NextRequest, NextResponse } from "next/server";
 
@@ -14,6 +15,10 @@ type DiscoverResponseModel = {
   maxTokens: number | null;
   thinking: boolean;
 };
+
+const PRIVATE_DISCOVERY_ALLOWED =
+  process.env.OPENCLAW_ALLOW_PRIVATE_MODEL_DISCOVERY === "1" ||
+  process.env.OPENCLAW_ALLOW_PRIVATE_MODEL_DISCOVERY === "true";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -51,6 +56,65 @@ function normalizeModel(provider: string, item: unknown): DiscoverResponseModel 
   };
 }
 
+function isPrivateHost(hostname: string): boolean {
+  const lower = hostname.toLowerCase();
+  if (lower === "localhost" || lower === "::1") {
+    return true;
+  }
+
+  const ipKind = isIP(lower);
+  if (ipKind === 4) {
+    const [a, b] = lower.split(".").map((part) => Number(part));
+    return (
+      a === 10 ||
+      a === 127 ||
+      (a === 169 && b === 254) ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168)
+    );
+  }
+
+  if (ipKind === 6) {
+    return lower === "::1" || lower.startsWith("fc") || lower.startsWith("fd") || lower.startsWith("fe80");
+  }
+
+  return false;
+}
+
+function validateDiscoveryBaseUrl(baseUrl: string, configuredBaseUrl?: string): string | null {
+  let parsed: URL;
+  try {
+    parsed = new URL(baseUrl);
+  } catch {
+    return "服务商 baseUrl 不是合法 URL";
+  }
+
+  if (!["https:", "http:"].includes(parsed.protocol)) {
+    return "只支持 http/https 的服务商地址";
+  }
+
+  if (parsed.username || parsed.password) {
+    return "服务商地址不允许包含用户名或密码";
+  }
+
+  if (configuredBaseUrl) {
+    try {
+      const configured = new URL(configuredBaseUrl);
+      if (configured.origin !== parsed.origin) {
+        return "发现模型只能使用该服务商已配置的地址";
+      }
+    } catch {
+      return "服务商配置中的 baseUrl 非法";
+    }
+  }
+
+  if (!PRIVATE_DISCOVERY_ALLOWED && isPrivateHost(parsed.hostname)) {
+    return "禁止访问内网或本地地址（可通过 OPENCLAW_ALLOW_PRIVATE_MODEL_DISCOVERY=1 放开）";
+  }
+
+  return null;
+}
+
 export async function POST(request: NextRequest) {
   const body = (await request.json()) as {
     providerKey?: string;
@@ -63,6 +127,7 @@ export async function POST(request: NextRequest) {
   let baseUrl = body.baseUrl?.trim();
   let apiType = body.apiType?.trim();
   let apiKey = body.apiKey?.trim();
+  let configuredBaseUrl: string | undefined;
 
   if (providerKey && (!baseUrl || !apiKey)) {
     const configPath = path.join(OPENCLAW_ROOT, "openclaw.json");
@@ -78,6 +143,7 @@ export async function POST(request: NextRequest) {
           : null;
 
       if (provider) {
+        configuredBaseUrl = typeof provider.baseUrl === "string" ? provider.baseUrl : undefined;
         baseUrl = baseUrl || (typeof provider.baseUrl === "string" ? provider.baseUrl : "");
         apiType = apiType || (typeof provider.api === "string" ? provider.api : "");
         apiKey = apiKey || (typeof provider.apiKey === "string" ? provider.apiKey : "");
@@ -97,6 +163,11 @@ export async function POST(request: NextRequest) {
       { ok: false, error: "当前只支持 openai-completions 类型自动获取" },
       { status: 400 }
     );
+  }
+
+  const validationError = validateDiscoveryBaseUrl(baseUrl, configuredBaseUrl);
+  if (validationError) {
+    return NextResponse.json({ ok: false, error: validationError }, { status: 400 });
   }
 
   const endpoint = `${baseUrl.replace(/\/+$/, "")}/models`;
