@@ -130,6 +130,7 @@ describe("AppShell", () => {
     expect(markup).toContain("Act");
     expect(markup).toContain("Operate");
     expect(markup).toContain("Configure");
+    expect(markup).toContain("技能");
     expect(markup).toContain("运行控制");
     expect(markup).toContain("常用动作");
     expect(markup).toContain("本地 AI 编排与运维");

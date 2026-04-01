@@ -1655,6 +1655,120 @@ a {
   margin-bottom: 16px;
 }
 
+.skills-page .models-primary-metrics {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.skills-loading-shell .empty-state {
+  border: 1px dashed rgba(143, 167, 199, 0.28);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(247, 250, 255, 0.66));
+}
+
+.skills-list {
+  gap: 14px;
+}
+
+.skills-item {
+  padding: 16px 18px;
+  border-radius: 18px;
+}
+
+.skills-item-main {
+  display: grid;
+  gap: 10px;
+}
+
+.skills-item-meta {
+  margin-bottom: 0;
+}
+
+.skills-item-head {
+  gap: 18px;
+}
+
+.skills-item-title {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.skills-item-title p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.skills-item-side {
+  display: grid;
+  justify-items: end;
+  align-content: start;
+  gap: 10px;
+  min-width: 132px;
+}
+
+.skills-state-pill {
+  min-height: auto;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.skills-state-pill .status-dot {
+  display: none;
+}
+
+.skills-detail-button {
+  padding: 9px 12px;
+  border-radius: 12px;
+  font-size: 0.86rem;
+}
+
+.skills-item-missing {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.52);
+  gap: 6px;
+}
+
+.skills-item-missing strong {
+  font-size: 0.76rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+}
+
+.skills-item-missing p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.skills-item footer {
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.skills-detail-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.skills-detail-card {
+  min-width: 0;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.skills-detail-path {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 .models-inline-form {
   gap: 16px;
   margin-bottom: 20px;
@@ -1803,6 +1917,11 @@ a {
   resize: vertical;
 }
 
+.skills-page .control-label input,
+.skills-page .control-label select {
+  background: rgba(255, 255, 255, 0.9);
+}
+
 .action-log {
   margin: 0;
   white-space: pre-wrap;
@@ -1915,6 +2034,16 @@ a {
   .top-bar-grid .metric-card:first-child {
     padding-top: 0;
     border-top: 0;
+  }
+
+  .skills-item-head,
+  .skills-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .skills-item-side {
+    justify-items: start;
+    min-width: 0;
   }
 
   .top-bar-status-wrap {

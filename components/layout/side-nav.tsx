@@ -35,6 +35,7 @@ const groups = [
     description: "配置",
     links: [
       { href: "/models", label: "模型" },
+      { href: "/skills", label: "技能" },
       { href: "/settings", label: "设置" },
       { href: "/diagnostics", label: "诊断" }
     ]

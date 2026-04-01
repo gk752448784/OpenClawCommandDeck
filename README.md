@@ -1,37 +1,49 @@
 # OpenClaw Command Deck
 
-独立于 OpenClaw 原生面板的中文工作台，用来查看本机 OpenClaw 实例的状态、会话、渠道、计划任务和诊断信息，并直接触发常见控制动作。
+中文化、本机优先的 OpenClaw 控制台。
 
-当前版本的重点不只是“看状态”，而是把一部分常见运维动作收成了一个可执行闭环：
+它不是一个“查看状态”的静态面板，而是一个围绕本地 OpenClaw 实例打造的运维工作台：把运行状态、问题分诊、常见控制动作和修复验证收进同一套界面里，减少在原生面板、配置文件和 CLI 之间来回切换的成本。
 
-- 发现问题
-- 识别根因
-- 给出修复方案
-- 执行低风险或确认型修复
-- 重新验证问题是否真的恢复
+## What It Is
 
-这不是远程托管控制台，也不是多租户服务。它的定位是：
+`OpenClaw Command Deck` 适合用来管理当前机器上的 OpenClaw 运行环境：
 
-- 跑在当前机器上
-- 读取当前机器上的 OpenClaw 数据目录
-- 通过当前机器上的 `openclaw` CLI 执行控制命令
+- 查看工作台、告警、会话、渠道、计划任务、代理和诊断信息
+- 通过本机 `openclaw` CLI 执行常见控制动作
+- 把部分高频问题处理收敛成一个可执行闭环：
+  - 发现问题
+  - 识别根因
+  - 给出修复方案
+  - 执行低风险或确认型修复
+  - 重新验证是否恢复
 
-## 功能概览
+它的边界也很明确：
 
-当前已经包含这些页面和能力：
+- 不是远程多实例控制台
+- 不是多租户托管服务
+- 不是完整日志平台
+- 不是 OpenClaw 官方前端的全量替代品
 
-- `工作台`：集中展示当前状态、重点事项和快捷入口
-- `控制台`：切换模型、执行动作、派发代理任务
-- `服务`：查看 Gateway 运行态，执行启停/重启，管理配置备份与恢复
-- `消息与会话`：查看会话摘要、异常线索和最近日志摘录
-- `渠道`：查看飞书、微信、Discord 等渠道配置与状态
-- `计划任务`：查看任务节奏、失败状态和修复入口
-- `代理`：查看代理角色、工作区以及每个 agent 的问题线索计数
-- `告警`：升级为问题分诊页，展示根因、修复级别、验证状态和修复动作
-- `诊断`：读取运行状态、日志和安全审计摘要，并展示 issue evidence
-- `设置`
+## Highlights
 
-## Root-Cause Repair Loop
+当前版本重点在这几块：
+
+- `工作台`
+  - 展示今日重点、系统姿态、快捷动作和运行摘要
+- `控制台`
+  - 切换模型、派发 agent、执行计划任务和常用控制动作
+- `告警 / Issues`
+  - 做问题分诊，展示根因、修复级别、验证状态和修复动作
+- `服务`
+  - 查看 Gateway 运行态，执行启停/重启，管理配置备份与恢复
+- `渠道 / 计划任务 / 代理 / 会话`
+  - 提供更聚焦的控制面，不把所有信息堆在一个页面里
+- `诊断`
+  - 读取运行状态、日志和安全审计摘要，并与 issue evidence 对齐
+- `Skills`
+  - 查看当前技能清单、可用性和缺失依赖，详情按需加载
+
+## Repair Loop
 
 第一阶段已经落地的 repair loop 主要覆盖三类问题：
 
@@ -49,21 +61,24 @@
   - `session_log_error_detected`
   - `agent_dispatch_failure`
 
-当前支持的修复动作分三档：
+当前支持的修复级别：
 
-- `auto`：低风险动作，允许直接执行
-- `confirm`：有副作用的动作，执行前明确确认
-- `manual`：只给出根因和处理步骤，不自动动配置
+- `auto`
+  - 低风险动作，允许直接执行
+- `confirm`
+  - 有副作用的动作，执行前明确确认
+- `manual`
+  - 只给出根因和处理步骤，不自动改配置
 
 已经接通的可执行修复包括：
 
 - 启用渠道
 - 启用插件
 - 对齐渠道与插件状态
-- 切换主模型到可用候选
+- 切换默认模型到可用候选
 - 重启 Gateway
 
-服务管理页还提供独立运维动作：
+服务管理页还支持这些独立动作：
 
 - 启动 Gateway
 - 停止 Gateway
@@ -71,99 +86,101 @@
 - 创建配置备份
 - 从备份恢复并重启 Gateway
 
-日志类问题当前先做到：
-
-- 自动识别错误线索
-- 关联 session / agent
-- 展示摘录与修复建议
-- 支持修复后重新验证
-
-还没有做成黑盒式自动化多步修复。
-
 ## Runtime Model
 
-项目的数据源分两类：
+这个项目是“本机控制台”，不是远程 API 管理器。
+
+它的数据来源分两类：
 
 - 展示类数据优先直接读取本地 OpenClaw 文件
-- 控制类动作通过 `openclaw` CLI 执行
+- 控制类动作通过本机 `openclaw` CLI 执行
 
-默认会读取这些内容：
+默认会读取：
 
 - `OPENCLAW_ROOT/openclaw.json`
 - `OPENCLAW_ROOT/cron/jobs.json`
 - `OPENCLAW_ROOT/workspace/HEARTBEAT.md`
 - `OPENCLAW_ROOT/agents/*/sessions/sessions.json`
 
-诊断页还会调用：
+诊断和运行态还会调用：
 
 - `openclaw status --json`
 - `openclaw logs --plain --limit 30`
+- `openclaw skills list --json`
+- `openclaw skills info <name> --json`
 
-修复动作会通过本机 `openclaw` CLI 执行，例如：
+控制和修复动作会通过本机 CLI 执行，例如：
 
 - `openclaw config set ...`
 - `openclaw gateway restart`
-
-服务管理相关动作还会执行：
-
 - `openclaw gateway start`
 - `openclaw gateway stop`
+- `openclaw cron edit ...`
+- `openclaw cron run ...`
 
-## Requirements
+## Getting Started
+
+### Requirements
 
 - `Node.js >= 22`
 - `npm >= 10`
 - 当前机器已安装并可直接执行 `openclaw`
-- 当前机器上存在可读取的 OpenClaw 工作目录
+- 当前机器存在可读取的 OpenClaw 工作目录
 
-默认情况下，应用会把 `OPENCLAW_ROOT` 解析为当前用户的 `~/.openclaw`。
+默认情况下，`OPENCLAW_ROOT` 会解析到当前用户的 `~/.openclaw`。
 
-## Configuration
-
-支持的环境变量：
-
-- `OPENCLAW_ROOT`：OpenClaw 根目录，默认是 `~/.openclaw`
-- `NEXT_PUBLIC_APP_NAME`：前端展示的应用名称
-- `OPENCLAW_CLI_TIMEOUT_MS`：诊断类 CLI 调用超时时间（毫秒，默认 12000）
-- `OPENCLAW_CONTROL_TIMEOUT_MS`：控制类 CLI 调用超时时间（毫秒，默认 15000）
-- `OPENCLAW_SKIP_GATEWAY_RESTART_ON_MODEL_CHANGE`：设为 `1/true` 时，模型变更后跳过 Gateway 重启
-- `OPENCLAW_ALLOW_PRIVATE_MODEL_DISCOVERY`：设为 `1/true` 时，允许模型自动发现访问内网/本地地址
-
-示例：
-
-```bash
-OPENCLAW_ROOT=/path/to/.openclaw NEXT_PUBLIC_APP_NAME="OpenClaw 指挥舱" npm run dev
-```
-
-## Getting Started
-
-安装依赖：
+### Install
 
 ```bash
 npm install
 ```
 
-启动开发环境：
+### Run
 
 ```bash
 npm run dev
 ```
 
-然后打开：
+打开：
 
 ```text
 http://127.0.0.1:3000/workbench
 ```
 
-如果你希望绑定固定测试地址，也可以使用：
+如果你需要给 Playwright 固定地址，也可以使用：
 
 ```bash
 npm run dev:test
 ```
 
+## Configuration
+
+支持的环境变量：
+
+- `OPENCLAW_ROOT`
+  - OpenClaw 根目录，默认 `~/.openclaw`
+- `NEXT_PUBLIC_APP_NAME`
+  - 前端展示用应用名称
+- `OPENCLAW_CLI_TIMEOUT_MS`
+  - 诊断类 CLI 超时时间，默认 `12000`
+- `OPENCLAW_CONTROL_TIMEOUT_MS`
+  - 控制类 CLI 超时时间，默认 `15000`
+- `OPENCLAW_SKIP_GATEWAY_RESTART_ON_MODEL_CHANGE`
+  - 设为 `1/true` 时，模型变更后跳过 Gateway 重启
+- `OPENCLAW_ALLOW_PRIVATE_MODEL_DISCOVERY`
+  - 设为 `1/true` 时，允许模型自动发现访问内网或本地地址
+
+示例：
+
+```bash
+OPENCLAW_ROOT=/path/to/.openclaw \
+NEXT_PUBLIC_APP_NAME="OpenClaw 指挥舱" \
+npm run dev
+```
+
 ## API Surface
 
-除了页面路由，项目还暴露了一组给前端自己使用的本地 API：
+这个仓库提供一组给前端自己使用的本地 API：
 
 - `GET /api/overview`
 - `GET /api/alerts`
@@ -184,30 +201,42 @@ npm run dev:test
 - `GET /api/cron`
 - `GET /api/sessions`
 - `GET /api/settings`
+- `GET /api/skills`
+- `GET /api/skills/[skillName]`
 
-其中：
+其中较核心的几组是：
 
-- `/api/issues` 返回统一问题列表
-- `/api/issues/[issueId]/repair` 执行问题对应修复动作
-- `/api/issues/[issueId]/verify` 重新跑验证逻辑，判断问题是否已解决
-- `/api/service` 返回服务运行态快照（版本、Gateway 可达性、检查时间）
-- `/api/service/backups` 支持列出与创建配置备份
-- `/api/service/backups/restore` 从指定备份恢复并重启 Gateway
+- `issues`
+  - 统一问题列表、修复动作和修复后验证
+- `service`
+  - 服务运行态、配置备份和恢复
+- `models`
+  - 模型与 provider 管理、模型自动发现
+- `skills`
+  - 技能清单、可用性和单项详情
 
 ## Scripts
 
-- `npm run dev`：启动 Next.js 开发环境
-- `npm run dev:test`：以 `127.0.0.1:3000` 启动，给 Playwright 使用
-- `npm run build`：构建生产包
-- `npm run start`：启动生产构建
-- `npm run lint`：运行 ESLint
-- `npm run typecheck`：运行 TypeScript 类型检查
-- `npm run test`：运行 Vitest 单元测试
-- `npm run test:e2e`：运行 Playwright 端到端测试
+- `npm run dev`
+  - 启动 Next.js 开发环境
+- `npm run dev:test`
+  - 以 `127.0.0.1:3000` 启动，供 Playwright 使用
+- `npm run build`
+  - 构建生产包
+- `npm run start`
+  - 启动生产构建
+- `npm run lint`
+  - 运行 ESLint
+- `npm run typecheck`
+  - 运行 TypeScript 类型检查
+- `npm run test`
+  - 运行 Vitest 单元测试
+- `npm run test:e2e`
+  - 运行 Playwright 端到端测试
 
 ## Verification
 
-建议在提交前至少执行：
+提交前建议至少执行：
 
 ```bash
 npm run typecheck
@@ -216,25 +245,25 @@ npm run test
 npm run build
 ```
 
-如需跑一个基础 e2e 用例：
+如需跑一个最基础的 e2e：
 
 ```bash
 npm run test:e2e -- tests/e2e/overview.spec.ts
 ```
 
-当前仓库的单元测试已经不再依赖你本机真实的 `.openclaw` 配置，而是使用仓库内 fixture。这样换机器后只要满足运行前提，就可以稳定验证。
+当前仓库的单元测试不依赖你本机真实的 `.openclaw` 配置，而是使用仓库内 fixture，因此跨机器运行更稳定。
 
 ## Project Structure
 
 ```text
 app/          Next.js App Router 页面与 API 路由
 components/   页面组件与复用 UI
-lib/          适配器、选择器、配置和服务端逻辑
+lib/          适配器、选择器、控制逻辑和服务端能力
 tests/        单元测试、e2e 测试与测试夹具
 docs/         设计与实施文档
 ```
 
-和问题修复闭环直接相关的目录主要是：
+和 repair loop 直接相关的目录主要是：
 
 ```text
 lib/signals/       原始 signal collectors
@@ -244,26 +273,17 @@ lib/issues/        issue orchestration 与 repair registry
 app/api/issues/    统一 issue / repair / verify API
 ```
 
-## Notes For Reuse
-
-如果你要把这个项目放到另一台机器上，通常只需要满足两件事：
-
-1. 那台机器本身能运行 `openclaw`
-2. 那台机器的 OpenClaw 数据目录可以通过 `OPENCLAW_ROOT` 找到
-
-项目并不依赖某个固定用户名或某台特定电脑，但它确实依赖“本机有 OpenClaw 运行环境”这个前提。
-
-## Current Scope
+## Scope
 
 这个项目当前适合：
 
 - 作为本机 OpenClaw 的运维和控制面板
 - 做问题分诊、常见故障处理和运行观察
-- 作为进一步扩展 repair loop 的基础
+- 作为继续扩展 repair loop 的基础
 
-它当前还不是：
+它当前还不适合：
 
-- 远程多实例控制台
-- 多租户托管服务
-- 完整的日志平台
-- 通用 OpenClaw 替代前端
+- 远程管理多台 OpenClaw 实例
+- 做多租户托管服务
+- 承担完整日志平台职责
+- 作为官方控制面的全量替代
