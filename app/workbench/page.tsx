@@ -6,6 +6,8 @@ import { RightRail } from "@/components/overview/right-rail";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { loadCoreDashboardData } from "@/lib/server/load-dashboard-data";
 
+export const dynamic = "force-dynamic";
+
 function buildRuntimePosture(health: "healthy" | "warning" | "critical") {
   switch (health) {
     case "healthy":

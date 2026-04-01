@@ -16,9 +16,10 @@ export function collectModelSignals({
   const candidates = new Set<string>();
   const primaryModelKey = config.agents.defaults.model.primary.trim();
 
-  for (const provider of Object.values(config.models.providers)) {
+  for (const [providerKey, provider] of Object.entries(config.models.providers)) {
     for (const model of provider.models ?? []) {
-      const modelKey = model.id.trim();
+      const modelId = model.id.trim();
+      const modelKey = modelId ? (modelId.includes("/") ? modelId : providerKey + "/" + modelId) : "";
       if (modelKey) {
         candidates.add(modelKey);
       }

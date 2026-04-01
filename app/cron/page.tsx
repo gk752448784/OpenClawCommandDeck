@@ -4,6 +4,8 @@ import { CronOverview } from "@/components/cron/cron-overview";
 import { loadCronJobs } from "@/lib/adapters/cron-jobs";
 import { OPENCLAW_ROOT } from "@/lib/config";
 
+export const dynamic = "force-dynamic";
+
 export default async function CronPage() {
   const cronResult = await loadCronJobs(`${OPENCLAW_ROOT}/cron/jobs.json`);
   if (!cronResult.ok) {

@@ -5,7 +5,7 @@ import { loadOpenClawConfig } from "@/lib/adapters/openclaw-config";
 import { loadCronJobs } from "@/lib/adapters/cron-jobs";
 import { loadHeartbeatGuide } from "@/lib/adapters/heartbeat";
 import { loadAgentDefinitions } from "@/lib/adapters/agents";
-import { loadSessionsSnapshot } from "@/lib/adapters/sessions";
+import { loadSessionsSnapshot, type SessionsSnapshot } from "@/lib/adapters/sessions";
 import { collectChannelSignals, type ChannelSignal } from "@/lib/signals/channels";
 import { collectGatewaySignal, type GatewaySignal } from "@/lib/signals/gateway";
 import { collectLogSignals, type LogSignals } from "@/lib/signals/logs";
@@ -55,6 +55,8 @@ export type IssueSignals = {
   gateway: GatewaySignal;
   logs: LogSignals;
 };
+
+type CoreDashboardData = Awaited<ReturnType<typeof loadCoreDashboardData>>;
 
 let diagnosticsCache:
   | {
@@ -127,26 +129,49 @@ export async function loadDashboardData() {
   };
 }
 
-export async function loadIssueSignals(): Promise<IssueSignals> {
-  const core = await loadCoreDashboardData();
-  const sessions = await requireOk(
+function emptyDiagnosticsSignals(): {
+  status: DiagnosticsStatusSignal;
+  logs: string[];
+} {
+  return {
+    status: {
+      runtimeVersion: "unknown",
+      gateway: {
+        error: null
+      }
+    },
+    logs: []
+  };
+}
+
+export async function loadIssueSignals({
+  core,
+  sessions,
+  includeDiagnostics = true
+}: {
+  core?: CoreDashboardData;
+  sessions?: SessionsSnapshot;
+  includeDiagnostics?: boolean;
+} = {}): Promise<IssueSignals> {
+  const resolvedCore = core ?? await loadCoreDashboardData();
+  const resolvedSessions = sessions ?? await requireOk(
     loadSessionsSnapshot(
       OPENCLAW_ROOT,
-      core.agents.map((agent) => agent.id)
+      resolvedCore.agents.map((agent) => agent.id)
     )
   );
-  const diagnostics = await loadDiagnosticsSignals();
+  const diagnostics = includeDiagnostics ? await loadDiagnosticsSignals() : emptyDiagnosticsSignals();
 
   return {
-    channels: collectChannelSignals(core.config),
+    channels: collectChannelSignals(resolvedCore.config),
     models: collectModelSignals({
-      config: core.config,
-      sessions
+      config: resolvedCore.config,
+      sessions: resolvedSessions
     }),
     gateway: collectGatewaySignal(diagnostics.status),
     logs: collectLogSignals({
       logs: diagnostics.logs,
-      sessions
+      sessions: resolvedSessions
     })
   };
 }
@@ -156,10 +181,30 @@ export async function loadDiagnosticsSignals(): Promise<{
   logs: string[];
 }> {
   const [statusOutput, logsOutput] = await Promise.all([
-    runOpenClawCli(["status", "--json"]),
+    tryRunOpenClawCli(["status", "--json"]),
     tryRunOpenClawCli(["logs", "--plain", "--limit", "30"])
   ]);
-  const status = parseOpenClawJsonOutput<DiagnosticsStatusSignal>(statusOutput.stdout);
+  let status: DiagnosticsStatusSignal;
+
+  if (statusOutput.ok) {
+    try {
+      status = parseOpenClawJsonOutput<DiagnosticsStatusSignal>(statusOutput.stdout);
+    } catch {
+      status = {
+        runtimeVersion: "unknown",
+        gateway: {
+          error: null
+        }
+      };
+    }
+  } else {
+    status = {
+      runtimeVersion: "unknown",
+      gateway: {
+        error: null
+      }
+    };
+  }
   const logs = summarizeLogLines(`${logsOutput.stdout}\n${logsOutput.stderr}`);
 
   return {

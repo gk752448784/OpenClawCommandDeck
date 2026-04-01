@@ -3,6 +3,8 @@ import { ChannelsOverview } from "@/components/channels/channels-overview";
 import { loadCoreDashboardData } from "@/lib/server/load-dashboard-data";
 import { SectionCard } from "@/components/shared/section-card";
 
+export const dynamic = "force-dynamic";
+
 export default async function ChannelsPage() {
   const data = await loadCoreDashboardData();
 

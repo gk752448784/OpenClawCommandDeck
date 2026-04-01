@@ -8,14 +8,37 @@ import { loadSessionsSnapshot } from "@/lib/adapters/sessions";
 import { OPENCLAW_ROOT } from "@/lib/config";
 import { buildSessionsModel } from "@/lib/selectors/sessions";
 
+export const dynamic = "force-dynamic";
+
 export default async function SessionsPage() {
   const data = await loadCoreDashboardData();
-  const issueSignals = await loadIssueSignals();
-  const issues = buildIssues({ signals: issueSignals });
   const sessionsResult = await loadSessionsSnapshot(
     OPENCLAW_ROOT,
     data.agents.map((agent) => agent.id)
   );
+  const issueSignals = sessionsResult.ok ? await loadIssueSignals({
+    core: data,
+    sessions: sessionsResult.data,
+    includeDiagnostics: false
+  }) : {
+    channels: [],
+    models: {
+      primaryModelKey: data.config.agents.defaults.model.primary,
+      candidateModelKeys: []
+    },
+    gateway: {
+      reachable: "unknown" as const,
+      error: null
+    },
+    logs: {
+      excerpts: [],
+      tokens: [],
+      references: [],
+      relatedSessionKeys: [],
+      relatedAgentIds: []
+    }
+  };
+  const issues = buildIssues({ signals: issueSignals });
   const sessions = sessionsResult.ok ? buildSessionsModel(sessionsResult.data) : {
     total: 0,
     activeSummary: "0/0 活跃",

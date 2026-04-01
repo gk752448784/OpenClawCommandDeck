@@ -11,6 +11,8 @@ import { loadOpenClawConfig } from "@/lib/adapters/openclaw-config";
 import { loadCronJobs } from "@/lib/adapters/cron-jobs";
 import { OPENCLAW_ROOT } from "@/lib/config";
 
+export const dynamic = "force-dynamic";
+
 export default async function ControlPage() {
   const data = await loadCoreDashboardData();
   const configResult = await loadOpenClawConfig(path.join(OPENCLAW_ROOT, "openclaw.json"));

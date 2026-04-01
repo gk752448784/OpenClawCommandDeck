@@ -7,6 +7,8 @@ import { loadOpenClawConfig } from "@/lib/adapters/openclaw-config";
 import { OPENCLAW_ROOT } from "@/lib/config";
 import { buildModelsDashboardModel } from "@/lib/selectors/models-dashboard";
 
+export const dynamic = "force-dynamic";
+
 export default async function ModelsPage() {
   const data = await loadCoreDashboardData();
   const configResult = await loadOpenClawConfig(path.join(OPENCLAW_ROOT, "openclaw.json"));

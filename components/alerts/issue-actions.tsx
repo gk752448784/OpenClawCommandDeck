@@ -5,6 +5,10 @@ import { useState, useTransition } from "react";
 
 import type { Issue } from "@/lib/types/issues";
 
+export function buildIssueActionPath(issueId: string, action: "repair" | "verify") {
+  return `/api/issues/${encodeURIComponent(issueId)}/${action}`;
+}
+
 function confirmationMessage(issue: Issue) {
   if (issue.repairPlan.repairability !== "confirm") {
     return null;
@@ -37,7 +41,7 @@ export function IssueActions({ issue }: { issue: Issue }) {
 
             startRepairTransition(async () => {
               setRepairMessage("");
-              const response = await fetch(`/api/issues/${issue.id}/repair`, {
+              const response = await fetch(buildIssueActionPath(issue.id, "repair"), {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json"
@@ -72,7 +76,7 @@ export function IssueActions({ issue }: { issue: Issue }) {
         onClick={() => {
           startVerifyTransition(async () => {
             setVerifyMessage("");
-            const response = await fetch(`/api/issues/${issue.id}/verify`, {
+            const response = await fetch(buildIssueActionPath(issue.id, "verify"), {
               method: "POST"
             });
             const payload = (await response.json()) as {
